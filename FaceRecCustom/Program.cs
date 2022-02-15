@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
 using Pnt = System.Drawing.Point;
-using System.Text.RegularExpressions;
 using FaceRecognitionDotNet;
 using OpenCvSharp;
 
@@ -22,75 +21,59 @@ namespace FaceDetectionCustom
 
             _faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
 
-            //OpenAndTest(videoCapture, cameraModule);
-            
-            foreach (var imageFile in ImageFilesInFolder(imagesToCheckDirectory))
-            {
-                TestImage(imageFile, model);
-            }
+            OpenAndTest(videoCapture, cameraModule, model);
         }
 
-        private static void OpenAndTest(VideoCapture videoCapture, CameraModule cameraModule)
+        private static void OpenAndTest(VideoCapture videoCapture, CameraModule cameraModule, Model model)
         {
             while (Window.WaitKey(10) != 27) // Esc
             {
                 Mat mat = videoCapture.RetrieveMat();
 
-                
+                Bitmap bitmap = MatToBitmap(mat);
+
+                bitmap = TestImage(bitmap, model);
+
+                mat = BitmapToMat(bitmap);
 
                 Cv2.ImShow("Image Show", mat);
             }
         }
 
-        public static IEnumerable<string> ImageFilesInFolder(string folder)
+        private static Bitmap MatToBitmap(Mat mat)
         {
-            return Directory.GetFiles(folder)
-                            .Where(s => Regex.IsMatch(Path.GetExtension(s), "(jpg|jpeg|png)$", RegexOptions.Compiled));
+            return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat);
         }
 
-        private static void TestImage(string imageToCheck, Model model)
+        private static Mat BitmapToMat(Bitmap bitmap)
         {
-            using (var unknownImage = FaceRecognition.LoadImageFile(imageToCheck))
+            return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+        }
+
+        private static Bitmap TestImage(Bitmap unknownBitmap, Model model)
+        {
+            using (var unknownImage = FaceRecognition.LoadImage(unknownBitmap))
             {
                 var faceLocations = _faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
-
-                string fileName = Path.GetFileName(imageToCheck);
-                string outputDirectory = @".\output\";
+                
+                Bitmap bitmap = unknownImage.ToBitmap();
 
                 if (faceLocations.Count() == 0)
                 {
-                    Console.WriteLine("None face located in " + fileName);
+                    Console.WriteLine("None");
                 }
                 else
                 {
-                    Bitmap bitmap = unknownImage.ToBitmap();
-
                     foreach (var faceLocation in faceLocations)
                     {
                         DrawRect(bitmap, faceLocation);
-
-                        try
-                        {
-                            SaveAndPrint(bitmap, outputDirectory, fileName, faceLocation);
-                        }
-                        catch (DirectoryNotFoundException)
-                        {
-                            Console.WriteLine("Creating directory {0}...", outputDirectory);
-                            Directory.CreateDirectory(outputDirectory);
-
-                            SaveAndPrint(bitmap, outputDirectory, fileName, faceLocation);
-                        }
-                    }                
+                        Console.WriteLine($"{faceLocation.Top}, " +
+                                          $"{faceLocation.Right}, {faceLocation.Bottom},{faceLocation.Left}");
+                    }
                 }
+
+                return bitmap;
             }
-        }
-
-        public static void SaveAndPrint(Bitmap bitmap, string outputDirectory, string fileName, Location faceLocation)
-        {
-            bitmap.Save(outputDirectory + fileName);
-
-            Console.WriteLine($"{fileName}, {faceLocation.Top}, " +
-                $"{faceLocation.Right}, {faceLocation.Bottom},{faceLocation.Left}");
         }
 
         private static void DrawRect(Bitmap bitmap, Location faceLocation)
