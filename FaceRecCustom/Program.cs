@@ -14,7 +14,6 @@ namespace FaceDetectionCustom
             VideoCapture videoCapture = new VideoCapture(0); // '0' to default system camera device
             CameraModule cameraModule = new CameraModule();
 
-            string imagesToCheckDirectory = @".\test_images\";
             string modelsDirectory = @".\models\";
 
             Enum.TryParse<Model>(modelsDirectory, true, out var model);

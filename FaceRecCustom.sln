@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecCustom", "FaceRecCustom\FaceRecCustom.csproj", "{8CADDF23-F5A0-4877-9E41-0149D95C4531}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkingWithCamera", "..\WorkingWithCamera\WorkingWithCamera.csproj", "{6E9E5ABF-EA88-437E-8E84-8C82C59F41EC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
