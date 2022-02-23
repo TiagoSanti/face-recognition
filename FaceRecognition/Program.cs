@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using Pnt = System.Drawing.Point;
 using FaceRecognitionDotNet;
 using OpenCvSharp;
 
@@ -75,12 +74,8 @@ namespace FaceRec
             while (Window.WaitKey(10) != 27) // Esc
             {
                 Mat mat = videoCapture.RetrieveMat();
-
                 Bitmap bitmap = MatToBitmap(mat);
-
-                bitmap = DetectFaces(faceRecognition, bitmap, model, people);
-
-                mat = BitmapToMat(bitmap);
+                mat = DetectFaces(faceRecognition, bitmap, model, people);
 
                 Cv2.ImShow("Image Show", mat);
             }
@@ -96,12 +91,13 @@ namespace FaceRec
             return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
         }
 
-        public static Bitmap DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
+        public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
         {
             var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
             var faceLocations = faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
 
             Bitmap bitmap = unknownImage.ToBitmap();
+            Mat mat = BitmapToMat(bitmap);
 
             if (faceLocations.Length > 0)
             {
@@ -109,15 +105,15 @@ namespace FaceRec
 
                 foreach (var faceLocation in faceLocations)
                 {
-                    RecognizeFaces(faceEncodings, people);
-                    DrawRect(bitmap, faceLocation);
-                }
+                    RecognizeFaces(faceEncodings, people, mat, faceLocation);
+                    DrawRect(mat, faceLocation);
+                 }
             }
 
-            return bitmap;
+            return mat;
         }
 
-        public static void RecognizeFaces(IEnumerable<FaceEncoding> faceEncodings, List<Person> people)
+        public static void RecognizeFaces(IEnumerable<FaceEncoding> faceEncodings, List<Person> people, Mat mat, Location faceLocation)
         {            
             foreach (var encoding in faceEncodings)
             {
@@ -166,35 +162,23 @@ namespace FaceRec
                         "\n--------------------------------------------------");
                     }
                 }
+
+                DrawName(mat, bestAvgMatchPerson, faceLocation);
             }
         }
 
-        public static void DrawRect(Bitmap bitmap, Location faceLocation)
+        public static void DrawRect(Mat mat, Location faceLocation)
         {
-            int left = faceLocation.Left;
-            int top = faceLocation.Top;
-            int right = faceLocation.Right;
-            int bottom = faceLocation.Bottom;
-
-            Pnt topLeft = new Pnt(left, top),
-                bottomLeft = new Pnt(left, bottom),
-                topRight = new Pnt(right, top),
-                bottomRight = new Pnt(right, bottom);
-
-            DrawLine(bitmap, topLeft, topRight);
-            DrawLine(bitmap, topRight, bottomRight);
-            DrawLine(bitmap, bottomRight, bottomLeft);
-            DrawLine(bitmap, bottomLeft, topLeft);
+            Cv2.Rectangle(mat,
+                new OpenCvSharp.Point(faceLocation.Left, faceLocation.Top),
+                new OpenCvSharp.Point(faceLocation.Right, faceLocation.Bottom),
+                Scalar.Red,
+                2);
         }
 
-        public static void DrawLine(Bitmap bitmap, Pnt point1, Pnt point2)
+        public static void DrawName(Mat mat, Person person, Location faceLocation)
         {
-            Pen pen = new Pen(Color.Red, 3);
-
-            using (var graphics = Graphics.FromImage(bitmap))
-            {
-                graphics.DrawLine(pen, point1, point2);
-            }
+            mat.PutText(person.Name, new OpenCvSharp.Point(faceLocation.Left, faceLocation.Bottom+15), fontFace: HersheyFonts.HersheySimplex, fontScale: 0.5, color: Scalar.White);
         }
     }
 }
