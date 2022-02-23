@@ -1,6 +1,6 @@
 ﻿using FaceRecognitionDotNet;
 
-namespace FaceDetectionCustom
+namespace FaceRec
 {
     public class Person
     {
@@ -24,7 +24,7 @@ namespace FaceDetectionCustom
         public override string ToString()
         {
             return "Name: " + Name +
-                "\nEncoding count: " + FaceEncondingsCount();
+                "\nEncoding count: " + FaceEncondingsCount() + "\n";
         }
 
         public string FaceEncondingsCount()
