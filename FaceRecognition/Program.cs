@@ -7,23 +7,23 @@ namespace FaceRec
 {
     public class Program
     {
-        private static readonly FaceRecognition? _faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
-        
         public static void Main()
         {
+            FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             var people = LoadPeopleEncodings();
-            VideoCapture videoCapture = new(0); // '0' to default system camera device
-
+            VideoCapture videoCapture = new(0);
+            
             string modelsDirectory = @".\models\";
             Enum.TryParse<Model>(modelsDirectory, true, out var model);
 
-            OpenAndTest(videoCapture, model);
+            OpenAndDetect(faceRecognition, videoCapture, model, people);
 
             Cv2.DestroyAllWindows();
         }
 
         public static List<Person> LoadPeopleEncodings()
         {
+            using var faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             List<Person> people = new();
             Person person;
 
@@ -46,7 +46,7 @@ namespace FaceRec
                     {
                         var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
 
-                        var facesEncodings = _faceRecognition.FaceEncodings(personLoadedImage);
+                        var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage);
 
                         if (facesEncodings.Any())
                         {
@@ -70,7 +70,7 @@ namespace FaceRec
             return people;
         }
 
-        private static void OpenAndTest(VideoCapture videoCapture, Model model)
+        public static void OpenAndDetect(FaceRecognition faceRecognition, VideoCapture videoCapture, Model model, List<Person> people)
         {
             while (Window.WaitKey(10) != 27) // Esc
             {
@@ -78,7 +78,7 @@ namespace FaceRec
 
                 Bitmap bitmap = MatToBitmap(mat);
 
-                bitmap = TestImage(bitmap, model);
+                bitmap = DetectFaces(faceRecognition, bitmap, model, people);
 
                 mat = BitmapToMat(bitmap);
 
@@ -86,37 +86,90 @@ namespace FaceRec
             }
         }
 
-        private static Bitmap MatToBitmap(Mat mat)
+        public static Bitmap MatToBitmap(Mat mat)
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat);
         }
 
-        private static Mat BitmapToMat(Bitmap bitmap)
+        public static Mat BitmapToMat(Bitmap bitmap)
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
         }
 
-        private static Bitmap TestImage(Bitmap unknownBitmap, Model model)
+        public static Bitmap DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
         {
-            using (var unknownImage = FaceRecognition.LoadImage(unknownBitmap))
-            {
-                var faceLocations = _faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
-                
-                Bitmap bitmap = unknownImage.ToBitmap();
+            var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
+            var faceLocations = faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
 
-                if (faceLocations.Count() > 0)
+            Bitmap bitmap = unknownImage.ToBitmap();
+
+            if (faceLocations.Length > 0)
+            {
+                var faceEncodings = faceRecognition.FaceEncodings(unknownImage, faceLocations);
+
+                foreach (var faceLocation in faceLocations)
                 {
-                    foreach (var faceLocation in faceLocations)
+                    RecognizeFaces(faceEncodings, people);
+                    DrawRect(bitmap, faceLocation);
+                }
+            }
+
+            return bitmap;
+        }
+
+        public static void RecognizeFaces(IEnumerable<FaceEncoding> faceEncodings, List<Person> people)
+        {            
+            foreach (var encoding in faceEncodings)
+            {
+                double bestAvgDistance = 1;
+                Person bestAvgMatchPerson = null;
+
+                double minDistance = 1;
+                Person minDistancePerson = null;
+
+                foreach (var person in people)
+                {
+                    var distances = FaceRecognition.FaceDistances(person.FaceEncodings, encoding);
+
+                    var avgPersonDistance = distances.Average();
+                    var minPersonDistance = distances.Min();
+
+                    if (avgPersonDistance < bestAvgDistance)
                     {
-                        DrawRect(bitmap, faceLocation);
+                        bestAvgDistance = avgPersonDistance;
+                        bestAvgMatchPerson = person;
+                    }
+                    if (minPersonDistance < minDistance)
+                    {
+                        minDistance = minPersonDistance;
+                        minDistancePerson = person;
                     }
                 }
 
-                return bitmap;
+                if (bestAvgMatchPerson != null && minDistancePerson != null)
+                {
+                    if (bestAvgMatchPerson.Equals(minDistancePerson))
+                    {
+                        Console.WriteLine("Best match distance person: \n" +
+                        bestAvgMatchPerson.ToString() +
+                        "With average: " + bestAvgDistance +
+                        "\nAnd minimal: " + minDistance +
+                        "\n--------------------------------------------------");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Best average distance match person: \n" +
+                        bestAvgMatchPerson.ToString() +
+                        "With average: " + bestAvgDistance +
+                        "\nAnd best minimal distance match person: " + 
+                        minDistancePerson.ToString() +
+                        "\n--------------------------------------------------");
+                    }
+                }
             }
         }
 
-        private static void DrawRect(Bitmap bitmap, Location faceLocation)
+        public static void DrawRect(Bitmap bitmap, Location faceLocation)
         {
             int left = faceLocation.Left;
             int top = faceLocation.Top;
@@ -134,7 +187,7 @@ namespace FaceRec
             DrawLine(bitmap, bottomLeft, topLeft);
         }
 
-        private static void DrawLine(Bitmap bitmap, Pnt point1, Pnt point2)
+        public static void DrawLine(Bitmap bitmap, Pnt point1, Pnt point2)
         {
             Pen pen = new Pen(Color.Red, 3);
 

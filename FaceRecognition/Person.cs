@@ -23,8 +23,7 @@ namespace FaceRec
 
         public override string ToString()
         {
-            return "Name: " + Name +
-                "\nEncoding count: " + FaceEncondingsCount() + "\n";
+            return "Name: " + Name + " -> " + FaceEncondingsCount() + "\n";
         }
 
         public string FaceEncondingsCount()
