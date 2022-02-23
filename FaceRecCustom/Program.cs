@@ -7,23 +7,70 @@ namespace FaceDetectionCustom
 {
     public class Program
     {
-        private static FaceRecognition? _faceRecognition;
-
+        private static readonly FaceRecognition? _faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
+        
         public static void Main()
         {
-            VideoCapture videoCapture = new VideoCapture(0); // '0' to default system camera device
+            var people = LoadPeopleEncodings();
+            VideoCapture videoCapture = new(0); // '0' to default system camera device
 
             string modelsDirectory = @".\models\";
-
             Enum.TryParse<Model>(modelsDirectory, true, out var model);
-
-            _faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
-
-            Console.WriteLine(model.ToString());
 
             OpenAndTest(videoCapture, model);
 
             Cv2.DestroyAllWindows();
+        }
+
+        public static List<Person> LoadPeopleEncodings()
+        {
+            List<Person> people = new();
+            Person person;
+
+            var imagesPath = @".\images";
+            var knownImages = imagesPath + @"\known";
+            var unknownEncodings = imagesPath + @"\unknown";
+
+            var peopleDir = Directory.EnumerateDirectories(knownImages);
+
+            if (peopleDir.Any())
+            {
+                foreach (var personDir in peopleDir)
+                {
+                    var personName = personDir.Split(Path.DirectorySeparatorChar).Last();
+                    person = new Person(personName);
+
+                    var personImages = Directory.GetFiles(personDir);
+
+                    foreach (var personImage in personImages)
+                    {
+                        Console.WriteLine("personDir: " + personDir +
+                                          "\npersonImage: " + personImage);
+                        var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
+
+                        var facesEncodings = _faceRecognition.FaceEncodings(personLoadedImage);
+
+                        if (facesEncodings.Any())
+                        {
+                            Console.WriteLine("face found! adding encodings..");
+                            foreach (FaceEncoding faceEncoding in facesEncodings)
+                            {
+                                person.AddEncoding(faceEncoding);
+                            }
+                        }
+                    }
+
+                    people.Add(person);
+                }
+            }
+
+            Console.WriteLine("\n----- PEOPLE ENCODINGS LOADED -----");
+            foreach (var personInfo in people)
+            {
+                Console.WriteLine(personInfo.ToString());
+            }
+
+            return people;
         }
 
         private static void OpenAndTest(VideoCapture videoCapture, Model model)
@@ -60,19 +107,11 @@ namespace FaceDetectionCustom
                 
                 Bitmap bitmap = unknownImage.ToBitmap();
 
-                if (faceLocations.Count() == 0)
-                {
-                    //Console.WriteLine("None");
-                }
-                else
+                if (faceLocations.Count() > 0)
                 {
                     foreach (var faceLocation in faceLocations)
                     {
                         DrawRect(bitmap, faceLocation);
-                        //Console.WriteLine($"{faceLocation.Top}, " +
-                        //                  $"{faceLocation.Right}, " +
-                        //                  $"{faceLocation.Bottom}, " +
-                        //                  $"{faceLocation.Left}");
                     }
                 }
 
