@@ -12,7 +12,6 @@ namespace FaceDetectionCustom
         public static void Main()
         {
             VideoCapture videoCapture = new VideoCapture(0); // '0' to default system camera device
-            CameraModule cameraModule = new CameraModule();
 
             string modelsDirectory = @".\models\";
 
@@ -20,10 +19,14 @@ namespace FaceDetectionCustom
 
             _faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
 
-            OpenAndTest(videoCapture, cameraModule, model);
+            Console.WriteLine(model.ToString());
+
+            OpenAndTest(videoCapture, model);
+
+            Cv2.DestroyAllWindows();
         }
 
-        private static void OpenAndTest(VideoCapture videoCapture, CameraModule cameraModule, Model model)
+        private static void OpenAndTest(VideoCapture videoCapture, Model model)
         {
             while (Window.WaitKey(10) != 27) // Esc
             {
@@ -59,15 +62,17 @@ namespace FaceDetectionCustom
 
                 if (faceLocations.Count() == 0)
                 {
-                    Console.WriteLine("None");
+                    //Console.WriteLine("None");
                 }
                 else
                 {
                     foreach (var faceLocation in faceLocations)
                     {
                         DrawRect(bitmap, faceLocation);
-                        Console.WriteLine($"{faceLocation.Top}, " +
-                                          $"{faceLocation.Right}, {faceLocation.Bottom},{faceLocation.Left}");
+                        //Console.WriteLine($"{faceLocation.Top}, " +
+                        //                  $"{faceLocation.Right}, " +
+                        //                  $"{faceLocation.Bottom}, " +
+                        //                  $"{faceLocation.Left}");
                     }
                 }
 
