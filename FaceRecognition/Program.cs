@@ -27,10 +27,10 @@ namespace FaceRec
             Person person;
 
             var imagesPath = @".\images";
-            var knownImages = imagesPath + @"\known";
-            var unknownEncodings = imagesPath + @"\unknown";
+            var knownPeoplePath = imagesPath + @"\known";
+            //var unknownEncodingsPath = imagesPath + @"\unknown";
 
-            var peopleDir = Directory.EnumerateDirectories(knownImages);
+            var peopleDir = Directory.EnumerateDirectories(knownPeoplePath);
 
             if (peopleDir.Any())
             {
