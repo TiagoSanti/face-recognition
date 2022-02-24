@@ -26,26 +26,25 @@ namespace FaceRec
             List<Person> people = new();
             Person person;
 
-            var imagesPath = @".\images";
-            var knownPeoplePath = imagesPath + @"\known";
-            //var unknownEncodingsPath = imagesPath + @"\unknown";
+            string imagesPath = @".\images";
+            string knownPeoplePath = imagesPath + @"\known";
 
             var peopleDir = Directory.EnumerateDirectories(knownPeoplePath);
 
             if (peopleDir.Any())
             {
-                foreach (var personDir in peopleDir)
+                foreach (string personDir in peopleDir)
                 {
-                    var personName = personDir.Split(Path.DirectorySeparatorChar).Last();
+                    string personName = personDir.Split(Path.DirectorySeparatorChar).Last();
                     person = new Person(personName);
 
-                    var personImages = Directory.GetFiles(personDir);
+                    string[] personImages = Directory.GetFiles(personDir);
 
-                    foreach (var personImage in personImages)
+                    foreach (string personImage in personImages)
                     {
                         var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
 
-                        var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage);
+                        IEnumerable<FaceEncoding> facesEncodings = faceRecognition.FaceEncodings(personLoadedImage);
 
                         if (facesEncodings.Any())
                         {
@@ -61,7 +60,7 @@ namespace FaceRec
             }
 
             Console.WriteLine("----- PEOPLE ENCODINGS LOADED -----");
-            foreach (var personInfo in people)
+            foreach (Person personInfo in people)
             {
                 Console.WriteLine(personInfo.ToString());
             }
@@ -94,16 +93,16 @@ namespace FaceRec
         public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
         {
             var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
-            var faceLocations = faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
+            Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, model).ToArray();
 
             Bitmap bitmap = unknownImage.ToBitmap();
             Mat mat = BitmapToMat(bitmap);
 
             if (faceLocations.Length > 0)
             {
-                var faceEncodings = faceRecognition.FaceEncodings(unknownImage, faceLocations);
+                IEnumerable<FaceEncoding> faceEncodings = faceRecognition.FaceEncodings(unknownImage, faceLocations);
 
-                foreach (var faceLocation in faceLocations)
+                foreach (Location faceLocation in faceLocations)
                 {
                     RecognizeFaces(faceEncodings, people, mat, faceLocation);
                     DrawRect(mat, faceLocation);
@@ -115,7 +114,7 @@ namespace FaceRec
 
         public static void RecognizeFaces(IEnumerable<FaceEncoding> faceEncodings, List<Person> people, Mat mat, Location faceLocation)
         {            
-            foreach (var encoding in faceEncodings)
+            foreach (FaceEncoding encoding in faceEncodings)
             {
                 double bestAvgDistance = 1;
                 Person bestAvgMatchPerson = null;
@@ -123,12 +122,12 @@ namespace FaceRec
                 double minDistance = 1;
                 Person minDistancePerson = null;
 
-                foreach (var person in people)
+                foreach (Person person in people)
                 {
-                    var distances = FaceRecognition.FaceDistances(person.FaceEncodings, encoding);
+                    IEnumerable<double> distances = FaceRecognition.FaceDistances(person.FaceEncodings, encoding);
 
-                    var avgPersonDistance = distances.Average();
-                    var minPersonDistance = distances.Min();
+                    double avgPersonDistance = distances.Average();
+                    double minPersonDistance = distances.Min();
 
                     if (avgPersonDistance < bestAvgDistance)
                     {
