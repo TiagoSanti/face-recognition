@@ -29,9 +29,9 @@ FaceRecognition
 └           
 ```
 ### Detalhes de execução
-* DLLs *DlibDotNet.dll, DlibDotNet.Native.dll and DlibDotNet.Dnn.dll* .\bin\x64\<Sua solução>\ </br>
+* DLLs *DlibDotNet.dll, DlibDotNet.Native.dll and DlibDotNet.Dnn.dll* ```.\bin\x64\<Sua solução>\``` </br>
 * Executar em plataforma de solução x64 </br>
-* [Models](https://github.com/davisking/dlib-models) localizados em .\bin\x64\<Sua solução>\models </br>
+* [Models](https://github.com/davisking/dlib-models) localizados em ```.\bin\x64\<Sua solução>\models``` </br>
 * Restaurar pacotes NuGet
 
 <strong>Readme em desenvolvimento</strong> ..
