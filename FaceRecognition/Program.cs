@@ -3,13 +3,12 @@ using System.Diagnostics;
 using FaceRecognitionDotNet;
 using OpenCvSharp;
 using System.Text.Json;
-using System.Linq;
 
 namespace FaceRec
 {
     public class Program
     {
-        public static void Main()
+        public static int Main()
         {
             FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             List<Person> people = new();
@@ -27,8 +26,32 @@ namespace FaceRec
                     break;
 
                 case 2:
+                    Console.Write("Choose model to encode:\n" +
+                        "1. Hog\n" +
+                        "2. Cnn\n" +
+                        "3. Custom model\n" +
+                        "Option: ");
+                    Model modelOption;
+                    switch (int.Parse(Console.ReadLine()))
+                    {
+                        case 1:
+                            modelOption = Model.Hog;
+                            break;
+
+                        case 2:
+                            modelOption = Model.Cnn;
+                            break;
+
+                        case 3:
+                            modelOption = Model.Custom;
+                            break;
+
+                        default:
+                            Console.WriteLine("Invalid option, shutting down program..");
+                            return 0;
+                    }
                     Console.WriteLine("\nStarting encoding..");
-                    ReencodePeopleImages(people);
+                    ReencodePeopleImages(people, modelOption);
                     break;
             };
             watch.Stop();
@@ -36,7 +59,7 @@ namespace FaceRec
             Console.WriteLine();
             foreach (Person personInfo in people)
             {
-                Console.WriteLine(personInfo.ToString());
+                Console.Write(personInfo.ToString());
             }
 
             Console.Write("\nPress any key to start camera and recognition.");
@@ -50,6 +73,7 @@ namespace FaceRec
             OpenAndDetect(faceRecognition, videoCapture, model, people);
 
             Cv2.DestroyAllWindows();
+            return 0;
         }
 
         private static void LoadExistingEncodings(List<Person> people)
@@ -87,11 +111,10 @@ namespace FaceRec
             }
         }
 
-        public static void ReencodePeopleImages(List<Person> people)
+        public static void ReencodePeopleImages(List<Person> people, Model model)
         {
             using var faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             Person person;
-            Model model = Model.Cnn;
             string modelName = ModelName(model);
 
             string knownImagesPath = @".\data\images\known";
@@ -107,10 +130,14 @@ namespace FaceRec
                 {
                     string personName = personDir.Split(Path.DirectorySeparatorChar).Last();
                     string personEncodingsDir = knownEncodingsPath + @"\" + personName;
+                    List<string> personEncodingsFiles = new();
+
                     bool encodingsAlreadyExisted = false;
                     if (Directory.Exists(personEncodingsDir))
                     {
                         encodingsAlreadyExisted = true;
+
+                        personEncodingsFiles = GetEncodingsFiles(personEncodingsDir);
                     }
 
                     person = new Person(personName);
@@ -124,66 +151,20 @@ namespace FaceRec
                     {
                         if (encodingsAlreadyExisted)
                         {
-                            string[] personEncodingsFilesFull = Directory.GetFiles(personEncodingsDir);
-                            List<string> personEncodingsFiles = new();
-                            
-                            foreach (var personEncodingsFile in personEncodingsFilesFull)
-                            {
-                                personEncodingsFiles.Add(Path.GetFileName(personEncodingsFile));
-                            }
-
-                            if (personEncodingsFiles.Any((Path.GetFileName(personImage) + "_" + modelName + ".json").Contains))
+                            if (CheckIfImageEncodingExists(personEncodingsFiles, modelName, personImage))
                             {
                                 Console.WriteLine("There is already an " + modelName + " model encoding file in this directory, skipping to next..");
                             }
                             else
                             {
-                                var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
-
-                                var singleEncodingTime = Stopwatch.StartNew();
-                                Console.Write("Encoding faces in image " + personImage + ".. ");
-                                var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage, model: model, predictorModel: PredictorModel.Large);
-                                singleEncodingTime.Stop();
-                                Console.WriteLine("Time took to complete: " + singleEncodingTime.Elapsed.TotalMinutes + " min");
-
-                                if (facesEncodings.Any())
-                                {
-                                    foreach (FaceEncoding faceEncoding in facesEncodings)
-                                    {
-                                        person.AddEncoding(faceEncoding);
-
-                                        Console.Write("Adding encoding file..");
-                                        var watch = Stopwatch.StartNew();
-                                        UpdatePersonEncodingFile(faceEncoding, person, modelName, personImage.Split(Path.DirectorySeparatorChar).Last());
-                                        watch.Stop();
-                                        Console.Write(" -> " + watch.ElapsedMilliseconds + " ms to complete\n\n");
-                                    }
-                                }
+                                IEnumerable<FaceEncoding> facesEncodings = EncodeImage(personImage, model, faceRecognition);
+                                UpdateEncodingDatabase(facesEncodings, person, personImage, modelName);
                             }
                         }
                         else
                         {
-                            var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
-
-                            var singleEncodingTime = Stopwatch.StartNew();
-                            Console.Write("Encoding faces in image " + personImage + ".. ");
-                            var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage, model: model, predictorModel: PredictorModel.Large);
-                            singleEncodingTime.Stop();
-                            Console.WriteLine("Time took to complete: " + singleEncodingTime.Elapsed.TotalMinutes + " min");
-
-                            if (facesEncodings.Any())
-                            {
-                                foreach (FaceEncoding faceEncoding in facesEncodings)
-                                {
-                                    person.AddEncoding(faceEncoding);
-
-                                    Console.Write("Adding " + person.Name + "'s encoding file..");
-                                    var watch = Stopwatch.StartNew();
-                                    UpdatePersonEncodingFile(faceEncoding, person, modelName, personImage.Split(Path.DirectorySeparatorChar).Last());
-                                    watch.Stop();
-                                    Console.Write(" -> " + watch.ElapsedMilliseconds + " ms to complete\n");
-                                }
-                            }
+                            IEnumerable<FaceEncoding> facesEncodings = EncodeImage(personImage, model, faceRecognition);
+                            UpdateEncodingDatabase(facesEncodings, person, personImage, modelName);
                         }
 
                     }
@@ -192,6 +173,56 @@ namespace FaceRec
                     Console.WriteLine("Finished encoding in " + person.Name + "'s directory. Time to complete: " + totalEncodingTime.Elapsed.TotalMinutes + " min");
                 }
             }
+        }
+
+        private static void UpdateEncodingDatabase(IEnumerable<FaceEncoding> facesEncodings, Person person, string personImage, string modelName)
+        {
+            if (facesEncodings.Any())
+            {
+                foreach (FaceEncoding faceEncoding in facesEncodings)
+                {
+                    person.AddEncoding(faceEncoding);
+
+                    Console.Write("Adding " + person.Name + "'s encoding file..");
+                    var watch = Stopwatch.StartNew();
+                    var imageFile = personImage.Split(Path.DirectorySeparatorChar).Last();
+                    var imageFileWithoutExtension = Path.GetFileNameWithoutExtension(imageFile);
+                    UpdatePersonEncodingFile(faceEncoding, person, modelName, imageFileWithoutExtension);
+                    watch.Stop();
+                    Console.Write(" -> " + watch.ElapsedMilliseconds + " ms to complete\n");
+                }
+            }
+        }
+
+        public static IEnumerable<FaceEncoding> EncodeImage(string personImage, Model model, FaceRecognition faceRecognition)
+        {
+            var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
+
+            var singleEncodingTime = Stopwatch.StartNew();
+            Console.Write("Encoding faces in image " + personImage + ".. ");
+            var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage, model: model, predictorModel: PredictorModel.Large);
+            singleEncodingTime.Stop();
+            Console.WriteLine("Time took to complete: " + singleEncodingTime.Elapsed.TotalMinutes + " min");
+
+            return facesEncodings;
+        }
+
+        public static bool CheckIfImageEncodingExists(List<string> personEncodingsFiles, string modelName, string personImage)
+        {
+            return personEncodingsFiles.Any((Path.GetFileName(personImage) + "_" + modelName + ".json").Contains);
+        }
+
+        public static List<string> GetEncodingsFiles(string personEncodingsDir)
+        {
+            List<string> personEncodingsFiles = new();
+            string[] personEncodingsFilesFull = Directory.GetFiles(personEncodingsDir);
+
+            foreach (var personEncodingsFile in personEncodingsFilesFull)
+            {
+                personEncodingsFiles.Add(Path.GetFileName(personEncodingsFile));
+            }
+
+            return personEncodingsFiles;
         }
 
         public static string ModelName(Model model)
@@ -225,27 +256,6 @@ namespace FaceRec
             SerializeEncoding(personEncodingsFilesPath + imageFileName + "_" + modelName + ".json", encoding);
         }
 
-        public static void SerializeEncoding(string fileName, FaceEncoding encoding)
-        {
-            string jsonEncoding = JsonSerializer.Serialize(encoding);
-            File.WriteAllText(fileName, jsonEncoding);
-        }
-
-        public static FaceEncoding? DeserializeEncoding(string fileName)
-        {
-            if (File.Exists(fileName))
-            {
-                var encoding = JsonSerializer.Deserialize<FaceEncoding>(fileName);
-
-                if (encoding != null)
-                {
-                    return encoding;
-                }
-            }
-
-            return null;
-        }
-
         public static void OpenAndDetect(FaceRecognition faceRecognition, VideoCapture videoCapture, Model model, List<Person> people)
         {
             while (Window.WaitKey(10) != 27) // Esc
@@ -256,16 +266,6 @@ namespace FaceRec
 
                 Cv2.ImShow("Image Show", mat);
             }
-        }
-
-        public static Bitmap MatToBitmap(Mat mat)
-        {
-            return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat);
-        }
-
-        public static Mat BitmapToMat(Bitmap bitmap)
-        {
-            return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
         }
 
         public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
@@ -345,6 +345,38 @@ namespace FaceRec
                     DrawName(mat, bestAvgMatchPerson, faceLocation);
                 }
             }
+        }
+
+        public static void SerializeEncoding(string fileName, FaceEncoding encoding)
+        {
+            string jsonEncoding = JsonSerializer.Serialize(encoding);
+            File.WriteAllText(fileName, jsonEncoding);
+        }
+
+        public static FaceEncoding? DeserializeEncoding(string fileName)
+        {
+            if (File.Exists(fileName))
+            {
+                Console.WriteLine("fileName to deserializer -> " + fileName);
+                var encoding = JsonSerializer.Deserialize<FaceEncoding>(fileName);
+
+                if (encoding != null)
+                {
+                    return encoding;
+                }
+            }
+
+            return null;
+        }
+
+        public static Bitmap MatToBitmap(Mat mat)
+        {
+            return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat);
+        }
+
+        public static Mat BitmapToMat(Bitmap bitmap)
+        {
+            return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
         }
 
         public static void DrawRect(Mat mat, Location faceLocation)
