@@ -2,7 +2,8 @@
 using System.Diagnostics;
 using FaceRecognitionDotNet;
 using OpenCvSharp;
-using System.Text.Json;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FaceRec
 {
@@ -26,7 +27,7 @@ namespace FaceRec
                     break;
 
                 case 2:
-                    Console.Write("Choose model to encode:\n" +
+                    Console.Write("\nChoose model to encode:\n" +
                         "1. Hog\n" +
                         "2. Cnn\n" +
                         "3. Custom model\n" +
@@ -197,9 +198,10 @@ namespace FaceRec
         public static IEnumerable<FaceEncoding> EncodeImage(string personImage, Model model, FaceRecognition faceRecognition)
         {
             var personLoadedImage = FaceRecognition.LoadImageFile(personImage);
+            var imageFile = personImage.Split(Path.DirectorySeparatorChar).Last();
 
             var singleEncodingTime = Stopwatch.StartNew();
-            Console.Write("Encoding faces in image " + personImage + ".. ");
+            Console.Write("Encoding faces in image " + imageFile + ".. ");
             var facesEncodings = faceRecognition.FaceEncodings(personLoadedImage, model: model, predictorModel: PredictorModel.Large);
             singleEncodingTime.Stop();
             Console.WriteLine("Time took to complete: " + singleEncodingTime.Elapsed.TotalMinutes + " min");
@@ -209,7 +211,7 @@ namespace FaceRec
 
         public static bool CheckIfImageEncodingExists(List<string> personEncodingsFiles, string modelName, string personImage)
         {
-            return personEncodingsFiles.Any((Path.GetFileName(personImage) + "_" + modelName + ".json").Contains);
+            return personEncodingsFiles.Any((Path.GetFileName(personImage) + "_" + modelName + ".encoding").Contains);
         }
 
         public static List<string> GetEncodingsFiles(string personEncodingsDir)
@@ -253,7 +255,7 @@ namespace FaceRec
                 Directory.CreateDirectory(personEncodingsFilesPath);
             }
 
-            SerializeEncoding(personEncodingsFilesPath + imageFileName + "_" + modelName + ".json", encoding);
+            SerializeEncoding(personEncodingsFilesPath + imageFileName + "_" + modelName + ".encoding", encoding);
         }
 
         public static void OpenAndDetect(FaceRecognition faceRecognition, VideoCapture videoCapture, Model model, List<Person> people)
@@ -349,8 +351,11 @@ namespace FaceRec
 
         public static void SerializeEncoding(string fileName, FaceEncoding encoding)
         {
-            string jsonEncoding = JsonSerializer.Serialize(encoding);
-            File.WriteAllText(fileName, jsonEncoding);
+            IFormatter formatter = new BinaryFormatter();
+            Stream stream = new FileStream(fileName, FileMode.Create);
+
+            formatter.Serialize(stream, encoding);
+            stream.Close();
         }
 
         public static FaceEncoding? DeserializeEncoding(string fileName)
@@ -358,12 +363,12 @@ namespace FaceRec
             if (File.Exists(fileName))
             {
                 Console.WriteLine("fileName to deserializer -> " + fileName);
-                var encoding = JsonSerializer.Deserialize<FaceEncoding>(fileName);
+                IFormatter formatter = new BinaryFormatter();
+                Stream stream = new FileStream(fileName, FileMode.Open);
+                FaceEncoding encoding = (FaceEncoding)formatter.Deserialize(stream);
+                stream.Close();
 
-                if (encoding != null)
-                {
-                    return encoding;
-                }
+                return encoding;
             }
 
             return null;
