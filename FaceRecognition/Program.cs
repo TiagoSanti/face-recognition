@@ -14,19 +14,14 @@ namespace FaceRec
             FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             List<Person> people = new();
 
-            Console.Write("1. Load existing encodings\n" +
-                            "2. Encode database and reload existing encodings\n" +
+            Console.Write("1. Encode database and reload existing encodings\n" +
+                            "2. Just load existing encodings\n" +
                             "Option: ");
             int option = int.Parse(Console.ReadLine());
             var watch = Stopwatch.StartNew();
             switch (option)
             {
                 case 1:
-                    Console.WriteLine("\nStarting loading..");
-                    LoadExistingEncodings(people);
-                    break;
-
-                case 2:
                     Console.Write("\nChoose model to encode:\n" +
                         "1. Hog\n" +
                         "2. Cnn\n" +
@@ -52,7 +47,12 @@ namespace FaceRec
                             return 0;
                     }
                     Console.WriteLine("\nStarting encoding..");
-                    ReencodePeopleImages(people, modelOption);
+                    ReencodePeopleImages(people, modelOption);                    
+                    break;
+
+                case 2:
+                    Console.WriteLine("\nStarting loading..");
+                    LoadExistingEncodings(people);
                     break;
             };
             watch.Stop();
@@ -97,7 +97,7 @@ namespace FaceRec
                     string personName = personEncodingDir.Split(Path.DirectorySeparatorChar).Last();
 
                     person = people.Where(x => x.Name.Contains(personName)).FirstOrDefault();
-                    
+
                     if (person != null)
                     {
                         Console.WriteLine(person.Name);
@@ -106,10 +106,11 @@ namespace FaceRec
                     else
                     {
                         person = new(personName);
-                    }                    
+                    }
 
                     foreach (string encodingFile in personEncodingFiles)
                     {
+
                         FaceEncoding? encoding = DeserializeEncoding(encodingFile);
                         if (encoding != null)
                         {
@@ -200,8 +201,6 @@ namespace FaceRec
             {
                 foreach (FaceEncoding faceEncoding in facesEncodings)
                 {
-                    person.AddEncoding(faceEncoding);
-
                     Console.Write("Adding " + person.Name + "'s encoding file..");
                     var watch = Stopwatch.StartNew();
                     string imageFile = personImage.Split(Path.DirectorySeparatorChar).Last();
@@ -226,7 +225,7 @@ namespace FaceRec
         }
 
         public static bool CheckIfImageEncodingExists(List<string> personEncodingsFiles, string modelName, string personImage)
-        {            
+        {
             return personEncodingsFiles.Contains(Path.GetFileNameWithoutExtension(personImage) + "_" + modelName + ".encoding");
         }
 
@@ -276,14 +275,14 @@ namespace FaceRec
         public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
         {
             var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
-            Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, Model.Hog).ToArray();
+            Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, Model.Cnn).ToArray();
 
             Bitmap bitmap = unknownImage.ToBitmap();
             Mat mat = BitmapToMat(bitmap);
 
             if (faceLocations.Length > 0)
             {
-                List<FaceEncoding> faceEncodings = (List<FaceEncoding>)faceRecognition.FaceEncodings(unknownImage, faceLocations, model: Model.Hog, predictorModel: PredictorModel.Large);
+                List<FaceEncoding> faceEncodings = (List<FaceEncoding>)faceRecognition.FaceEncodings(unknownImage, faceLocations, model: Model.Cnn, predictorModel: PredictorModel.Large);
 
                 RecognizeFaces(faceEncodings, faceLocations, people, mat);
                 DrawRect(mat, faceLocations);
