@@ -1,6 +1,6 @@
-# Detecção e reconhecimento facial usando [FaceRecognitionDotNet](https://github.com/takuya-takeuchi/FaceRecognitionDotNet) e [OpenCVSharp](https://github.com/shimat/opencvsharp).
+# Facial detection and recognition using [FaceRecognitionDotNet](https://github.com/takuya-takeuchi/FaceRecognitionDotNet)
 
-Utilize a representação da estrutura do projeto abaixo como referência para as instruções referentes aos diretórios.
+Use this project representation below as a reference for directory instructions.
 ```
 FaceRecognition
 │   Program.cs
@@ -28,10 +28,10 @@ FaceRecognition
 |                  └              
 └           
 ```
-### Detalhes de execução
-* DLLs *DlibDotNet.dll, DlibDotNet.Native.dll and DlibDotNet.Dnn.dll* ```.\bin\x64\<Sua solução>\``` </br>
-* Executar em plataforma de solução x64 </br>
-* [Models](https://github.com/davisking/dlib-models) localizados em ```.\bin\x64\<Sua solução>\models``` </br>
-* Restaurar pacotes NuGet
+### Execution requirements
+* DLLs *DlibDotNet.dll, DlibDotNet.Native.dll and DlibDotNet.Dnn.dll* ```.\bin\x64\<your solution>\``` </br>
+* Execute in x64 solution platform </br>
+* [Models](https://github.com/davisking/dlib-models) located in ```.\bin\x64\<your solution>\models``` </br>
+* Restore NuGet packages
 
-<strong>Readme em desenvolvimento</strong> ..
+<strong>Mode details coming soon</strong> ..
