@@ -54,6 +54,10 @@ namespace FaceRec
                     Console.WriteLine("\nStarting encoding..");
                     ReencodePeopleImages(people, modelOption);
                     break;
+
+                default:
+                    Console.WriteLine("Invalid option, shutting down program..");
+                    return 0;
             };
             watch.Stop();
             Console.Write("\n----- PEOPLE ENCODINGS LOADED ----- {0:N2} seconds to load", watch.Elapsed.TotalSeconds);
@@ -65,7 +69,6 @@ namespace FaceRec
 
             Console.Write("\nPress any key to start camera and recognition.");
             Console.ReadKey();
-
             Console.Write("Starting camera..");
             VideoCapture videoCapture = new(0);
 
@@ -86,18 +89,19 @@ namespace FaceRec
 
             string encodingsPath = @".\data\encodings";
             string knownEncodingPath = encodingsPath + @"\known";
-            string[] peopleEncodingDir = Directory.GetDirectories(knownEncodingPath);
-
-            Console.WriteLine(peopleEncodingDir.Length + " people encodings directories where found.");
-            if (peopleEncodingDir.Any())
+            try
             {
+                string[] peopleEncodingDir = Directory.GetDirectories(knownEncodingPath);
+
+                Console.WriteLine(peopleEncodingDir.Length + " people encodings directories where found.");
+
                 foreach (string personEncodingDir in peopleEncodingDir)
                 {
                     string[] personEncodingFiles = Directory.GetFiles(personEncodingDir);
                     string personName = personEncodingDir.Split(Path.DirectorySeparatorChar).Last();
 
                     person = people.Where(x => x.Name.Contains(personName)).FirstOrDefault();
-                    
+
                     if (person != null)
                     {
                         Console.WriteLine(person.Name);
@@ -106,7 +110,7 @@ namespace FaceRec
                     else
                     {
                         person = new(personName);
-                    }                    
+                    }
 
                     foreach (string encodingFile in personEncodingFiles)
                     {
@@ -123,9 +127,9 @@ namespace FaceRec
                     }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("Skipping task..");
+                Console.WriteLine(ex.Message + "\nSkipping task..");
             }
         }
 
@@ -226,7 +230,7 @@ namespace FaceRec
         }
 
         public static bool CheckIfImageEncodingExists(List<string> personEncodingsFiles, string modelName, string personImage)
-        {            
+        {
             return personEncodingsFiles.Contains(Path.GetFileNameWithoutExtension(personImage) + "_" + modelName + ".encoding");
         }
 
