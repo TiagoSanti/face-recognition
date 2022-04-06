@@ -4,6 +4,10 @@ using FaceRecognitionDotNet;
 using OpenCvSharp;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using MathNet.Numerics;
+using CenterFaceDotNet;
+using NcnnDotNet;
+using OpenCvSharp.Extensions;
 
 namespace FaceRec
 {
@@ -14,6 +18,7 @@ namespace FaceRec
             FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             List<Person> people = new();
 
+            /*
             Console.Write("1. Load existing encodings\n" +
                             "2. Encode database and reload existing encodings\n" +
                             "Option: ");
@@ -66,7 +71,9 @@ namespace FaceRec
             {
                 Console.Write(personInfo.ToString());
             }
+            */
 
+            /*
             Console.Write("\nPress any key to start camera and recognition.");
             Console.ReadKey();
             Console.Write("Starting camera..");
@@ -76,9 +83,148 @@ namespace FaceRec
             Enum.TryParse(modelsDirectory, true, out Model model);
 
             OpenAndDetect(faceRecognition, videoCapture, model, people);
+            */
+
+            //IdentifyFaces(people);
+            LoadExistingEncodings(people);
+            EncodeTest(people, Model.Hog);
+
 
             Cv2.DestroyAllWindows();
             return 0;
+        }
+
+        public static void EncodeTest(List<Person> people, Model model)
+        {
+            using var faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
+            using CenterFace centerFace = CenterFace.Create(new CenterFaceParameter
+            {
+                BinFilePath = @"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\models\centerface.bin",
+                ParamFilePath = @"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\models\centerface.param"
+            });
+            string modelName = ModelName(model);
+            double faceThreshold = 0.049;
+
+            string testImagesDir = @"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\data\test\";
+            var peopleImagesDir = Directory.GetDirectories(testImagesDir);
+
+            foreach (var personImagesDir in peopleImagesDir)
+            {
+                var poseCases = Directory.GetDirectories(personImagesDir);
+
+                foreach (var poseCase in poseCases)
+                {
+                    var imagesFiles = Directory.GetFiles(poseCase);
+
+                    foreach (var imageFile in imagesFiles)
+                    {
+                        OpenCvSharp.Mat mat = Cv2.ImRead(imageFile);
+                        using var inMat = NcnnDotNet.Mat.FromPixels(mat.Data, PixelType.Bgr2Rgb, mat.Cols, mat.Rows);
+                        FaceInfo[] faceInfos = centerFace.Detect(inMat, mat.Cols, mat.Rows).ToArray();
+                        if (faceInfos.Length > 0)
+                        {
+                            Location[] locations = faceInfos.Select(x => new Location((int)x.X1, (int)x.Y1, (int)x.X2, (int)x.Y2)).ToArray();
+
+                            Bitmap bitmap = new(imageFile);
+                            var image = FaceRecognition.LoadImage(bitmap);
+
+                            List<FaceEncoding> facesEncodings = (List<FaceEncoding>)faceRecognition.FaceEncodings(image, locations, predictorModel: PredictorModel.Large);
+
+                            DrawRect(mat, locations);
+
+                                for (int i = 0; i < facesEncodings.Count; i++)
+                                {
+                                    Person closestPerson = null;
+
+                                    Console.WriteLine("Identifying " + Path.GetFileName(imageFile.Split(@"\").Last()));
+                                    var minDistance = double.MaxValue;
+                                    foreach (Person person in people)
+                                    {
+                                        foreach (FaceEncoding personEncoding in person.FaceEncodings)
+                                        {
+                                            var distance = Distance.Cosine(personEncoding.GetRawEncoding(), facesEncodings[i].GetRawEncoding());
+                                            if (distance < minDistance)
+                                            {
+                                                minDistance = distance;
+                                                closestPerson = person;
+                                            }
+                                        }
+                                    }
+
+                                    if (minDistance < faceThreshold)
+                                    {
+                                        Console.WriteLine("Person identified -> " + closestPerson.Name + " | Distance: " + minDistance.ToString());
+                                        DrawName(mat, closestPerson, locations[i]);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Uknown person\n");
+                                        DrawName(mat, null, locations[i]);
+                                    }
+                                    
+                            }
+                            Cv2.ImWrite(poseCase + Path.GetFileName(imageFile.Split(@"\").Last()).ToString(), mat);
+                        }
+                        else
+                        {
+                            Console.WriteLine("No face found");
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void IdentifyFaces(List<Person> people)
+        {
+            Console.WriteLine("BEGIN COMPARISON\n");
+
+            string[] unknownEncodingsFiles = Directory.GetFiles(@"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\data\encodings\Unknown\");
+            const double faceThreshold = 0.09;
+
+            Person? unknown = people.Where(x => x.Name.Equals("Unknown")).FirstOrDefault();
+            if (unknown!=null)
+            {
+                Console.WriteLine("Unknown encodings -> " + unknown.FaceEncodings.Count().ToString());
+                int unkLenght = unknown.FaceEncodings.Count;
+
+                List<Person> knownPeople = people.Where(x => !x.Name.Equals("Unknown")).ToList();
+                Person closestPerson = null;
+
+                for (int i = 0; i < unkLenght; i++)
+                {
+                    Console.WriteLine("Identifying " + Path.GetFileName(unknownEncodingsFiles[i]));
+                    var minDistance = double.MaxValue;
+                    foreach (Person person in knownPeople)
+                    {
+                        Console.WriteLine("Comparing to " + person.Name);
+                        foreach (FaceEncoding personEncoding in person.FaceEncodings)
+                        {
+                            var distance = Distance.Cosine(personEncoding.GetRawEncoding(), unknown.FaceEncodings[i].GetRawEncoding());
+                            if (distance < minDistance)
+                            {
+                                minDistance = distance;
+                                closestPerson = person;
+                            }
+                        }
+                    }
+
+                    if (minDistance < faceThreshold)
+                    {
+                        Console.WriteLine("Person identified -> " + closestPerson.Name + " | Distance: " + minDistance.ToString());
+                        File.Create(@"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\data\result\"+Path.GetFileNameWithoutExtension(unknownEncodingsFiles[i])+"_"+closestPerson.Name+"_"+minDistance);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Uknown person\n");
+                        File.Create(@"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\data\result\"+Path.GetFileNameWithoutExtension(unknownEncodingsFiles[i])+"_Unknown_"+minDistance);
+                    }
+                }
+            }
+        }
+
+        private static double FaceDistance(FaceEncoding personFaceEnconding, FaceEncoding faceEncodings)
+        {
+            return Distance.Cosine(personFaceEnconding.GetRawEncoding(), faceEncodings.GetRawEncoding());
         }
 
         private static void LoadExistingEncodings(List<Person> people)
@@ -88,7 +234,7 @@ namespace FaceRec
             bool personInstanceAlreadyExists = false;
 
             string encodingsPath = @".\data\encodings";
-            string knownEncodingPath = encodingsPath + @"\known";
+            string knownEncodingPath = encodingsPath + @"\";
             try
             {
                 string[] peopleEncodingDir = Directory.GetDirectories(knownEncodingPath);
@@ -136,11 +282,17 @@ namespace FaceRec
         public static void ReencodePeopleImages(List<Person> people, Model model)
         {
             using var faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
+            using CenterFace centerFace = CenterFace.Create(new CenterFaceParameter
+            {
+                BinFilePath = @"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\models\centerface.bin",
+                ParamFilePath = @"C:\Dev\Github\TiagoSanti\face-recognition\FaceRecognition\bin\x64\Debug\net6.0\models\centerface.param"
+            });
+
             Person person;
             string modelName = ModelName(model);
 
-            string knownImagesPath = @".\data\images\known";
-            string knownEncodingsPath = @".\data\encodings\known";
+            string knownImagesPath = @".\data\images\test";
+            string knownEncodingsPath = @".\data\encodings\";
 
             var peopleDir = Directory.EnumerateDirectories(knownImagesPath);
 
@@ -184,8 +336,29 @@ namespace FaceRec
                         }
                         else
                         {
-                            IEnumerable<FaceEncoding> facesEncodings = EncodeImage(personImage, model, faceRecognition);
-                            UpdateEncodingDatabase(facesEncodings, person, personImage, modelName);
+                            OpenCvSharp.Mat mat = Cv2.ImRead(personImage);
+                            using var inMat = NcnnDotNet.Mat.FromPixels(mat.Data, PixelType.Bgr2Rgb, mat.Cols, mat.Rows);
+                            FaceInfo[] faceInfos = centerFace.Detect(inMat, mat.Cols, mat.Rows).ToArray();
+                            if (faceInfos.Length > 0)
+                            {
+                                Console.WriteLine("Faces found -> " + faceInfos.Length.ToString());
+                                Location[] locations = faceInfos.Select(x => new Location((int)x.X1, (int)x.Y1, (int)x.X2, (int)x.Y2)).ToArray();
+
+                                Bitmap bitmap = new(personImage);
+                                var image = FaceRecognition.LoadImage(bitmap);
+
+                                IEnumerable<FaceEncoding> facesEncodings = faceRecognition.FaceEncodings(image, locations, predictorModel: PredictorModel.Large);
+                                var it = 0;
+                                foreach (var faceEncoding in facesEncodings)
+                                {
+                                    UpdateEncodingDatabase2(faceEncoding, person, personImage, modelName, it);
+                                    it++;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("No face found");
+                            }
                         }
 
                     }
@@ -196,6 +369,17 @@ namespace FaceRec
             }
 
             LoadExistingEncodings(people);
+        }
+
+        private static void UpdateEncodingDatabase2(FaceEncoding faceEncoding, Person person, string personImage, string modelName, int it)
+        {
+                    person.AddEncoding(faceEncoding);
+
+                    Console.WriteLine("Adding " + person.Name + "'s encoding file..");
+                    string imageFile = personImage.Split(Path.DirectorySeparatorChar).Last();
+                    string imageFileWithoutExtension = Path.GetFileNameWithoutExtension(imageFile);
+                    UpdatePersonEncodingFile(faceEncoding, person, modelName, imageFileWithoutExtension+it.ToString());
+                
         }
 
         private static void UpdateEncodingDatabase(IEnumerable<FaceEncoding> facesEncodings, Person person, string personImage, string modelName)
@@ -255,7 +439,7 @@ namespace FaceRec
 
         public static void UpdatePersonEncodingFile(FaceEncoding encoding, Person person, string modelName, string imageFileName)
         {
-            string personEncodingsFilesPath = @".\data\encodings\known\" + person.Name + @"\";
+            string personEncodingsFilesPath = @".\data\encodings\" + person.Name + @"\";
 
             if (Directory.Exists(personEncodingsFilesPath) == false)
             {
@@ -267,9 +451,9 @@ namespace FaceRec
 
         public static void OpenAndDetect(FaceRecognition faceRecognition, VideoCapture videoCapture, Model model, List<Person> people)
         {
-            while (Window.WaitKey(10) != 27) // Esc
+            while (OpenCvSharp.Window.WaitKey(10) != 27) // Esc
             {
-                Mat mat = videoCapture.RetrieveMat();
+                OpenCvSharp.Mat mat = videoCapture.RetrieveMat();
                 Bitmap bitmap = MatToBitmap(mat);
                 mat = DetectFaces(faceRecognition, bitmap, model, people);
 
@@ -277,13 +461,13 @@ namespace FaceRec
             }
         }
 
-        public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
+        public static OpenCvSharp.Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
         {
             var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
             Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, Model.Hog).ToArray();
 
             Bitmap bitmap = unknownImage.ToBitmap();
-            Mat mat = BitmapToMat(bitmap);
+            OpenCvSharp.Mat mat = BitmapToMat(bitmap);
 
             if (faceLocations.Length > 0)
             {
@@ -296,7 +480,7 @@ namespace FaceRec
             return mat;
         }
 
-        public static void RecognizeFaces(List<FaceEncoding> faceEncodings, Location[] faceLocations, List<Person> people, Mat mat)
+        public static void RecognizeFaces(List<FaceEncoding> faceEncodings, Location[] faceLocations, List<Person> people, OpenCvSharp.Mat mat)
         {
             var index = 0;
 
@@ -384,17 +568,17 @@ namespace FaceRec
             return null;
         }
 
-        public static Bitmap MatToBitmap(Mat mat)
+        public static Bitmap MatToBitmap(OpenCvSharp.Mat mat)
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat);
         }
 
-        public static Mat BitmapToMat(Bitmap bitmap)
+        public static OpenCvSharp.Mat BitmapToMat(Bitmap bitmap)
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
         }
 
-        public static void DrawRect(Mat mat, Location[] faceLocations)
+        public static void DrawRect(OpenCvSharp.Mat mat, Location[] faceLocations)
         {
             foreach (Location faceLocation in faceLocations)
             {
@@ -406,14 +590,21 @@ namespace FaceRec
             }
         }
 
-        public static void DrawName(Mat mat, Person person, Location faceLocation)
+        public static void DrawName(OpenCvSharp.Mat mat, Person? person, Location faceLocation)
         {
             Cv2.Rectangle(mat,
                 new OpenCvSharp.Point(faceLocation.Left, faceLocation.Bottom),
                 new OpenCvSharp.Point(faceLocation.Right, faceLocation.Bottom + 20),
                 Scalar.Red,
                 -1);
-            mat.PutText(person.Name, new OpenCvSharp.Point(faceLocation.Left + 3, faceLocation.Bottom + 15), fontFace: HersheyFonts.HersheyDuplex, fontScale: 0.5, color: Scalar.White);
+            if (person != null)
+            {
+                mat.PutText(person.Name, new OpenCvSharp.Point(faceLocation.Left + 3, faceLocation.Bottom + 15), fontFace: HersheyFonts.HersheyDuplex, fontScale: 0.5, color: Scalar.White);
+            } 
+            else
+            {
+                mat.PutText("Unknown", new OpenCvSharp.Point(faceLocation.Left + 3, faceLocation.Bottom + 15), fontFace: HersheyFonts.HersheyDuplex, fontScale: 0.5, color: Scalar.White);
+            }
         }
     }
 }
