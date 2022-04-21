@@ -33,5 +33,3 @@ FaceRecognition
 * Execute in x64 solution platform </br>
 * [Models](https://github.com/davisking/dlib-models) located in ```.\bin\x64\<your solution>\models``` </br>
 * Restore NuGet packages
-
-<strong>Mode details coming soon</strong> ..
