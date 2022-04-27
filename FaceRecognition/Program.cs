@@ -18,7 +18,7 @@ namespace FaceRec
             FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
             List<Person> people = new();
 
-            /*
+            
             Console.Write("1. Load existing encodings\n" +
                             "2. Encode database and reload existing encodings\n" +
                             "Option: ");
@@ -71,9 +71,7 @@ namespace FaceRec
             {
                 Console.Write(personInfo.ToString());
             }
-            */
 
-            /*
             Console.Write("\nPress any key to start camera and recognition.");
             Console.ReadKey();
             Console.Write("Starting camera..");
@@ -83,12 +81,6 @@ namespace FaceRec
             Enum.TryParse(modelsDirectory, true, out Model model);
 
             OpenAndDetect(faceRecognition, videoCapture, model, people);
-            */
-
-            //IdentifyFaces(people);
-            LoadExistingEncodings(people);
-            EncodeTest(people, Model.Hog);
-
 
             Cv2.DestroyAllWindows();
             return 0;
@@ -291,7 +283,7 @@ namespace FaceRec
             Person person;
             string modelName = ModelName(model);
 
-            string knownImagesPath = @".\data\images\test";
+            string knownImagesPath = @".\data\images\";
             string knownEncodingsPath = @".\data\encodings\";
 
             var peopleDir = Directory.EnumerateDirectories(knownImagesPath);
