@@ -1,0 +1,7 @@
+# Files from dlib-models
+LICENSE
+README.md
+*.dat
+*.dnn
+age-predictor/
+gender-classifier/
