@@ -47,7 +47,7 @@ namespace FaceRec
                             return 0;
                     }
                     Console.WriteLine("\nStarting encoding..");
-                    ReencodePeopleImages(people, modelOption);                    
+                    ReencodePeopleImages(people, modelOption);
                     break;
 
                 case 2:
@@ -84,8 +84,8 @@ namespace FaceRec
             Person? person;
             bool personInstanceAlreadyExists = false;
 
-            string encodingsPath = @".\data\encodings";
-            string knownEncodingPath = encodingsPath + @"\known";
+            string encodingsPath = "models/data/encodings";
+            string knownEncodingPath = encodingsPath + "/known";
             string[] peopleEncodingDir = Directory.GetDirectories(knownEncodingPath);
 
             Console.WriteLine(peopleEncodingDir.Length + " people encodings directories where found.");
@@ -136,8 +136,8 @@ namespace FaceRec
             Person person;
             string modelName = ModelName(model);
 
-            string knownImagesPath = @".\data\images\known";
-            string knownEncodingsPath = @".\data\encodings\known";
+            string knownImagesPath = Path.GetFullPath("models/data/images/known");
+            string knownEncodingsPath = Path.GetFullPath("models/data/encodings/known");
 
             var peopleDir = Directory.EnumerateDirectories(knownImagesPath);
 
@@ -148,7 +148,7 @@ namespace FaceRec
                 foreach (string personDir in peopleDir)
                 {
                     string personName = personDir.Split(Path.DirectorySeparatorChar).Last();
-                    string personEncodingsDir = knownEncodingsPath + @"\" + personName;
+                    string personEncodingsDir = knownEncodingsPath + "/" + personName;
                     string[] personEncodingsFilesFull;
                     List<string> personEncodingsFiles = new();
 
@@ -250,7 +250,7 @@ namespace FaceRec
 
         public static void UpdatePersonEncodingFile(FaceEncoding encoding, Person person, string modelName, string imageFileName)
         {
-            string personEncodingsFilesPath = @".\data\encodings\known\" + person.Name + @"\";
+            string personEncodingsFilesPath = "models/data/encodings/known/" + person.Name + @"/";
 
             if (Directory.Exists(personEncodingsFilesPath) == false)
             {
@@ -260,25 +260,50 @@ namespace FaceRec
             SerializeEncoding(personEncodingsFilesPath + imageFileName + "_" + modelName + ".encoding", encoding);
         }
 
+        public static bool processing = false;
+        public static bool isFileSaving = false;
+        public static void SaveFrameToFile(MemoryStream stream) // Save current frame to file
+        {
+            processing = true;
+            Console.WriteLine("Saving frame to file..");
+            using (FileStream file = new FileStream("camera_frame.png", FileMode.Create, FileAccess.Write))
+            {
+                isFileSaving = true;    // Avoid conflict in LoadImageFile
+                stream.WriteTo(file);
+                file.Close();
+                isFileSaving = false;
+            }
+            Thread.Sleep(500);
+            processing = false;
+        }
+
         public static void OpenAndDetect(FaceRecognition faceRecognition, VideoCapture videoCapture, Model model, List<Person> people)
         {
             while (Window.WaitKey(10) != 27) // Esc
             {
                 Mat mat = videoCapture.RetrieveMat();
-                Bitmap bitmap = MatToBitmap(mat);
-                mat = DetectFaces(faceRecognition, bitmap, model, people);
-
+                /*
+                * Save file since Linux doesn't support Bitmap
+                * This is not the best way to do it, but works pretty good
+                */
+                if (!processing)
+                {
+                    Thread imageProcessingThread = new Thread(() => SaveFrameToFile(mat.ToMemoryStream()));
+                    imageProcessingThread.Start();
+                }
+                //  Bitmap bitmap = MatToBitmap(mat);
+                if (!isFileSaving)
+                {
+                    mat = DetectFaces(faceRecognition, model, people, mat);
+                }
                 Cv2.ImShow("Image Show", mat);
             }
         }
 
-        public static Mat DetectFaces(FaceRecognition faceRecognition, Bitmap unknownBitmap, Model model, List<Person> people)
+        public static Mat DetectFaces(FaceRecognition faceRecognition, Model model, List<Person> people, Mat mat)
         {
-            var unknownImage = FaceRecognition.LoadImage(unknownBitmap);
-            Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, Model.Cnn).ToArray();
-
-            Bitmap bitmap = unknownImage.ToBitmap();
-            Mat mat = BitmapToMat(bitmap);
+            var unknownImage = FaceRecognition.LoadImageFile("camera_frame.png");
+            Location[] faceLocations = faceRecognition.FaceLocations(unknownImage, 0, Model.Hog).ToArray();
 
             if (faceLocations.Length > 0)
             {
