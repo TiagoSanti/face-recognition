@@ -4,9 +4,9 @@ user=$1
 image=$2
 image_name=$3
 
-if [ "$user" == "" ] || [ "$image" == "" ] || [ "$image_name" == "" ]; then
+if [ "$user" == "" ] ||  [ "$image" == "" ]  ||  [ "$image_name" == "" ] ; then
     echo "usage: $0 <username> <photo_directory> <name_photo.ext>";
-    exit 255;
+    exit 
 fi
 
 user_path=models/data/images/known/"$user"
