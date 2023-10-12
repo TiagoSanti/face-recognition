@@ -9,4 +9,9 @@ sudo apt-get install -y \
 libopenblas-dev \
 liblapack-dev \
 libx11-6 \
-libdlib19
+libdlib19 \
+libtesseract-dev \
+libgtk2.0-0 \
+libgtk2.0-0-dev \
+libdc1394 \
+libdc1394-dev
