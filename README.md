@@ -1,35 +1,10 @@
-# Facial detection and recognition using [FaceRecognitionDotNet](https://github.com/takuya-takeuchi/FaceRecognitionDotNet)
+# Face recognition with Dotnet working with Linux and MacOS
 
-Use this project representation below as a reference for directory instructions.
+To start it:
+
+```bash
+docker build --tag Andrea055/face_recognition - < Dockerfile
+docker run --rm -ti -v /tmp/.X11-unix:/tmp/.X11-unix -v /dev/shm:/dev/shm  --device /dev/dri --device=/dev/video0:/dev/video0 -e DISPLAY=:0 -p 2222:22 -v /dev/video0:/dev/video0 Andrae055/face_recognition
 ```
-FaceRecognition
-│   Program.cs
-│   Person.cs
-│   obj
-|   ...
-|   bin
-|   └─── Debug
-│        Release
-│        x64
-│        └─── Release
-│             Debug
-│             └─── net6.0
-│                  └─── models
-│                  |    data
-|                  |    └─── encodings
-|                  |    |    └─── known
-|                  |    |         └─── <target_people_directory>
-|                  |    |              └─── <target_person_encodings>
-|                  |    └─── images
-|                  |         └─── known
-|                  |              └─── <target_people_directory>
-|                  |                   └─── <target_person_images>
-|                  |    ...
-|                  └              
-└           
-```
-### Execution requirements
-* DLLs *DlibDotNet.dll, DlibDotNet.Native.dll and DlibDotNet.Dnn.dll* ```.\bin\x64\<your solution>\``` </br>
-* Execute in x64 solution platform </br>
-* [Models](https://github.com/davisking/dlib-models) located in ```.\bin\x64\<your solution>\models``` </br>
-* Restore NuGet packages
+
+Then you can open an ssh session at localhost:2222 and start the program at /home/dev/face-recognition/FaceRecognition
