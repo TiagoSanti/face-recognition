@@ -1,6 +1,6 @@
 # Face recognition with Dotnet working with Linux and MacOS using Docker
 
-This project use Docker so if you haven't you can install it [Debain]
+This project use Docker so if you haven't you can install it [Debian]
 
 ```bash
     sudo apt install docker.io
