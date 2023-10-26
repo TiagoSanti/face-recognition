@@ -55,4 +55,4 @@ RUN cd /home/dev && git clone https://github.com/Andrea055/face-recognition.git 
     sudo cp static_libs/libOpenCvSharpExtern.so /lib/x86_64-linux-gnu/libOpenCvSharpExtern.so && \
     wget https://bellard.org/bpg/2.png > camera_frame.png
 
-ENTRYPOINT service ssh restart && bash
+ENTRYPOINT service ssh start && bash
