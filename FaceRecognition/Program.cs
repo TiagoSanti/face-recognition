@@ -273,7 +273,7 @@ namespace FaceRec
                 file.Close();
                 isFileSaving = false;
             }
-            Thread.Sleep(500);
+            Thread.Sleep(700);
             processing = false;
         }
 
