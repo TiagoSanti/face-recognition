@@ -9,6 +9,7 @@ namespace FaceRec
 {
     public class Program
     {
+        public static Person Unknown {get; set;} = new Person("Unknown");
         public static int Main()
         {
             FaceRecognition? faceRecognition = FaceRecognition.Create(Path.GetFullPath("models"));
@@ -359,7 +360,7 @@ namespace FaceRec
 
                 if (bestAvgMatchPerson != null && minDistancePerson != null)
                 {
-                    if (bestAvgMatchPerson.Equals(minDistancePerson))
+                    if (bestAvgDistance < 0.5)
                     {
                         Console.WriteLine("Best match distance person: " +
                         bestAvgMatchPerson.Name +
@@ -369,12 +370,8 @@ namespace FaceRec
                     }
                     else
                     {
-                        Console.WriteLine("Best average distance match person: " +
-                        bestAvgMatchPerson.Name +
-                        "\nWith average: " + bestAvgDistance +
-                        "\nAnd best minimal distance match person: " +
-                        minDistancePerson.Name +
-                        "\n--------------------------------------------------");
+                        bestAvgMatchPerson = Unknown;
+                        Console.WriteLine("Best average distance match person: Unknown\n--------------------------------------------------");
                     }
                 }
 
