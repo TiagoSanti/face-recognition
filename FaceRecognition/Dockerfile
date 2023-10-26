@@ -25,7 +25,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt install libavutil56 --reinstall
 
 # Enable SSH
-RUN apt install -y sudo openssh-server && service ssh start
+RUN apt install -y sudo openssh-server && service ssh enable
 
 # Create dev user with qwe123 passwod
 RUN adduser dev
@@ -54,3 +54,5 @@ RUN cd /home/dev && git clone https://github.com/Andrea055/face-recognition.git 
     sudo cp static_libs/libOpenCvSharpExtern.so /lib/x86_64-linux-gnu/libOpenCvSharpExtern && \
     sudo cp static_libs/libOpenCvSharpExtern.so /lib/x86_64-linux-gnu/libOpenCvSharpExtern.so && \
     wget https://bellard.org/bpg/2.png > camera_frame.png
+
+ENTRYPOINT service ssh restart && bash
