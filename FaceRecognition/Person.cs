@@ -6,6 +6,7 @@ namespace FaceRec
     {
         public string Name { get; set; }
         public List<FaceEncoding>? FaceEncodings { get; set; }
+        public double Precision { get; set; } = 0;
 
         public Person(string name)
         {
