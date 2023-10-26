@@ -362,9 +362,10 @@ namespace FaceRec
                 {
                     if (bestAvgDistance < 0.5)
                     {
+                        bestAvgMatchPerson.Precision = (1 - bestAvgDistance) * 100;
                         Console.WriteLine("Best match distance person: " +
                         bestAvgMatchPerson.Name +
-                        "\nWith average: " + ((1 - bestAvgDistance) * 100).ToString("0.000") +
+                        "\nWith average: " + bestAvgMatchPerson.Precision +
                         " %\nAnd minimal: " + ((1 - minDistance) * 100).ToString("0.000") +
                         " %\n--------------------------------------------------");
                     }
@@ -437,7 +438,7 @@ namespace FaceRec
                 new OpenCvSharp.Point(faceLocation.Right, faceLocation.Bottom + 20),
                 Scalar.Red,
                 -1);
-            mat.PutText(person.Name, new OpenCvSharp.Point(faceLocation.Left + 3, faceLocation.Bottom + 15), fontFace: HersheyFonts.HersheyDuplex, fontScale: 0.5, color: Scalar.White);
+            mat.PutText(string.Format("{0} - {1}%", person.Name, person.Precision.ToString("0.00")), new OpenCvSharp.Point(faceLocation.Left + 3, faceLocation.Bottom + 15), fontFace: HersheyFonts.HersheyDuplex, fontScale: 0.5, color: Scalar.White);
         }
     }
 }
