@@ -25,7 +25,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt install libavutil56 --reinstall
 
 # Enable SSH
-RUN apt install -y sudo openssh-server && service ssh enable
+RUN apt install -y sudo openssh-server
 
 # Create dev user with qwe123 passwod
 RUN adduser dev
