@@ -273,7 +273,7 @@ namespace FaceRec
                 file.Close();
                 isFileSaving = false;
             }
-            Thread.Sleep(500);
+            Thread.Sleep(700);
             processing = false;
         }
 
@@ -291,10 +291,17 @@ namespace FaceRec
                     Thread imageProcessingThread = new Thread(() => SaveFrameToFile(mat.ToMemoryStream()));
                     imageProcessingThread.Start();
                 }
-                //  Bitmap bitmap = MatToBitmap(mat);
+
                 if (!isFileSaving)
                 {
-                    mat = DetectFaces(faceRecognition, model, people, mat);
+                    try
+                    {
+                        mat = DetectFaces(faceRecognition, model, people, mat);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Exception in detection");
+                    }
                 }
                 Cv2.ImShow("Image Show", mat);
             }
