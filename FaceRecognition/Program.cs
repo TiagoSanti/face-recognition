@@ -363,9 +363,9 @@ namespace FaceRec
                     {
                         Console.WriteLine("Best match distance person: " +
                         bestAvgMatchPerson.Name +
-                        "\nWith average: " + bestAvgDistance +
-                        "\nAnd minimal: " + minDistance +
-                        "\n--------------------------------------------------");
+                        "\nWith average: " + ((1 - bestAvgDistance) * 100).ToString("0.000") +
+                        " %\nAnd minimal: " + ((1 - minDistance) * 100).ToString("0.000") +
+                        " %\n--------------------------------------------------");
                     }
                     else
                     {
