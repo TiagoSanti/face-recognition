@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Client\FaceRecognitionPanel.Client.csproj" />
     <ProjectReference Include="..\Shared\FaceRecognitionPanel.Shared.csproj" />
+    <ProjectReference Include="..\DBContext\DBContext.csproj" />
   </ItemGroup>
 
 
