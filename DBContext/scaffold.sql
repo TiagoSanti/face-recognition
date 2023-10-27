@@ -1,0 +1,19 @@
+CREATE TABLE classes(
+	PK_class INTEGER PRIMARY KEY AUTOINCREMENT,
+	class_name TEXT
+);
+
+CREATE TABLE users(
+	PK_user INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT,
+	surname TEXT,
+	FK_class INTEGER NOt NULL,
+	FOREIGN KEY(FK_class) REFERENCES classes(PK_class)
+);
+
+CREATE TABLE images(
+	PK_image INTEGER PRIMARY KEY AUTOINCREMENT,
+	FK_user INTEGER NOT NULL,
+	image_path TEXT,
+	FOREIGN KEY(FK_user) REFERENCES users(PK_user)
+);
