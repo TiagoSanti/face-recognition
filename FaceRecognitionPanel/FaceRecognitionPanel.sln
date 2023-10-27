@@ -1,0 +1,64 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.0.0
+MinimumVisualStudioVersion = 16.0.0.0
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognitionPanel.Server", "Server\FaceRecognitionPanel.Server.csproj", "{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognitionPanel.Client", "Client\FaceRecognitionPanel.Client.csproj", "{9421D6FC-FB20-4286-B268-A8FCC10FFD83}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognitionPanel.Shared", "Shared\FaceRecognitionPanel.Shared.csproj", "{38B68370-FC42-42CE-8CD7-9814AED52234}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|x64.Build.0 = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Debug|x86.Build.0 = Debug|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|x64.ActiveCfg = Release|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|x64.Build.0 = Release|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|x86.ActiveCfg = Release|Any CPU
+		{9421D6FC-FB20-4286-B268-A8FCC10FFD83}.Release|x86.Build.0 = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|x64.Build.0 = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Debug|x86.Build.0 = Debug|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|x64.ActiveCfg = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|x64.Build.0 = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|x86.ActiveCfg = Release|Any CPU
+		{F4121032-F1CD-40BC-8FF2-5ADBF9F9FEC6}.Release|x86.Build.0 = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|x64.Build.0 = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Debug|x86.Build.0 = Debug|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|x64.ActiveCfg = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|x64.Build.0 = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|x86.ActiveCfg = Release|Any CPU
+		{38B68370-FC42-42CE-8CD7-9814AED52234}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4DD9A9B8-99C9-4D01-B8A5-BD940AB5CB48}
+	EndGlobalSection
+EndGlobal
