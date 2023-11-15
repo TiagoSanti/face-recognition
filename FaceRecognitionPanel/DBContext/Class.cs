@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace DBContext;
 
-namespace DBContext;
-
-public partial class Class
+public class Class
 {
-    public long PkClass { get; set; }
+    public int ClassId { get; set; }
 
     public string? ClassName { get; set; }
 
