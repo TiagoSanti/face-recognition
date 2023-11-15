@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace DBContext;
 
-namespace DBContext;
-
-public partial class Image
+public class Image
 {
-    public long PkImage { get; set; }
-
-    public long FkUser { get; set; }
+    public int ImageId { get; set; }
 
     public string? ImagePath { get; set; }
 
-    public virtual User FkUserNavigation { get; set; } = null!;
+    public User FkUser {get; set;} = new();
 }
