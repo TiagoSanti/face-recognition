@@ -1,0 +1,128 @@
+@page "/users_db"
+
+@using face_recognition.Shared
+@using System.Text.Json
+@using DBContext
+@inject HttpClient Http
+
+<PageTitle>Users</PageTitle>
+
+<h1>Users</h1>
+
+<face_recognition.Client.Pages.popup.Add_user close_pop="@make_add_no_visible" reload="@reload" visible=@add_user_visible />
+
+<div class="box">
+    <button   @onclick="make_add_visible"> <div> <face_recognition.Client.Pages.Icon name="add" /> Add user </div></button>
+</div>
+
+@if(api_response!=""){
+    <div>
+        @api_response
+    </div>
+}
+
+<div class="box">
+    @if(utenti.Count!=0){
+        @foreach (var utente in utenti)
+        {
+            <button @onclick="(() => select_user(utente.Id))" class='utente'> <div> <face_recognition.Client.Pages.Icon name="person" /> @utente.Name @utente.Surname </div> </button>
+        }
+    }
+</div>
+
+@if(utente.Name != null){
+    <div class="info-utente">
+        <b>Name: </b> @utente.Name <br>
+        <b>Surname: </b> @utente.Surname
+
+        <br><button @onclick="(() => delete_user( utente.Id ))"><div><face_recognition.Client.Pages.Icon name="Delete" /> Delete user</div> </button>
+    </div>
+}
+
+@code {
+    private List<User> utenti = new List<User>();
+    private User utente = new User();
+    private bool add_user_visible = false; // popup add user visible or not
+    private string? api_response;
+
+    private async void import(){
+        utenti = await Http.GetFromJsonAsync<List<User>>("api/GetUsers?token=" + Variables.Token);
+        StateHasChanged();
+    }
+
+    private async void import_user_by_id(int id){
+        utente = await Http.GetFromJsonAsync<User>("api/GetUserBYId?token=" + Variables.Token+"&id="+id);
+        StateHasChanged();
+    }
+
+    private async Task make_add_visible()
+    {
+        add_user_visible = true;
+        import();
+        StateHasChanged();
+    }
+
+    private async Task make_add_no_visible()
+    {
+        add_user_visible = false;
+        import();
+        StateHasChanged();
+    }
+
+    private async Task select_user(int utente){
+        import_user_by_id(utente);
+        StateHasChanged();
+    }
+
+    private async Task delete_user(int id){
+        var response = await Http.GetAsync("api/DeleteUser?token="+Variables.Token+"&id="+id);
+        import();
+        utente = new User();
+        StateHasChanged();
+    }
+
+    private async Task reload(){
+        Console.WriteLine("ok reload");
+        import();
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync() // api get users
+    {
+        import();
+    }
+}
+
+
+
+<style>
+    .utente{
+        transition: 0.5s;
+        padding: 15px;
+        padding-bottom: 2px;
+        padding-top: 5px;
+        border: 1px solid white;
+        border-bottom: 3px solid white;
+        display: inline-block;
+        border-radius: 10px;
+        margin-right: 10px;
+    }
+    .utente:hover{
+        border: 1px solid blueviolet;
+        border-bottom: 3px solid blueviolet;
+        background-color: rgba(137, 43, 226, 0.159);
+        cursor: pointer;
+    }
+
+    .utente > div, button > div{
+        display: flex;
+        align-items: center;
+    }
+    .info-utente{
+        margin-left: 20px;
+        margin-top: 20px;
+    }
+    .info-utente button{
+        margin-left: 0;
+    }
+</style>

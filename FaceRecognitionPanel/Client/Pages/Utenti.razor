@@ -1,0 +1,105 @@
+@page "/users_db"
+
+@using face_recognition.Shared
+@using System.Text.Json
+
+@inject HttpClient Http
+
+<PageTitle>Users</PageTitle>
+
+<h1>Users</h1>
+
+<face_recognition.Client.Pages.popup.Add_user close_pop="@make_add_no_visible" reload="@reload" visible=@add_user_visible />
+
+<div class="box">
+    <button  @onclick="make_add_visible"> <div> <face_recognition.Client.Pages.Icon name="add" /> Add user </div></button>
+</div>
+
+<div class="box">
+    @if(utenti.Length!=0){
+        @foreach (var utente in utenti)
+        {
+            <div class='utente'> <div> <face_recognition.Client.Pages.Icon name="person" /> @utente </div> </div>
+        }
+    }else{
+        <div>
+            @msg
+        </div>
+    }
+</div>
+
+<style>
+    .utente{
+        transition: 0.5s;
+        padding: 15px;
+        padding-bottom: 2px;
+        padding-top: 5px;
+        border-bottom: 2px solid white;
+        display: inline-block;
+        border-top-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+    .utente:hover{
+        border-bottom: 2px solid blueviolet;
+        background-color: rgba(137, 43, 226, 0.159);
+        cursor: pointer;
+    }
+
+    .utente > div, button > div{
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+@code {
+    private string[] utenti = new string[] {};
+    private bool add_user_visible = false; // popup add user visible or not
+
+    private async void import(){
+
+        var response = await Http.GetAsync("api/GetUsers?token="+Variables.Token);
+        string jsonContent = await response.Content.ReadAsStringAsync();
+        ApiResponse resp = JsonSerializer.Deserialize<ApiResponse>(jsonContent);
+        if(resp.code==200){
+            utenti = resp.utenti;  
+            msg = (utenti.Length==0) ? "Nessun utente trovato" : resp.msg ; 
+        }else{
+            msg = "API error";
+        }
+        StateHasChanged();
+    }
+
+    private async Task make_add_visible()
+    {
+        add_user_visible = true;
+        import();
+        StateHasChanged();
+    }
+
+    private async Task make_add_no_visible()
+    {
+        add_user_visible = false;
+        import();
+        StateHasChanged();
+    }
+
+    private async Task reload(){
+        Console.WriteLine("ok reload");
+        import();
+        StateHasChanged();
+    }
+
+    private string msg = ""; // messaggio per errori
+
+    protected override async Task OnInitializedAsync() // api get users
+    {
+        import();
+    }
+
+    public class ApiResponse // class for api users requests
+    {
+        public int code { get; set; }
+        public string[] utenti { get; set; } = new string[] {};
+        public string msg { get; set; } = "";
+    }
+}

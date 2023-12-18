@@ -1,0 +1,59 @@
+@using face_recognition.Shared;
+@using System.Text.Json
+@inject HttpClient Http
+
+
+<div class="popup @( visible ? "" : "hide")">
+    
+<div class="popup-content">
+    <h2>Add user</h2>
+
+    <input type="text" @bind="nome" placeholder="User name" />
+    <input type="text" @bind="surname" placeholder="User surname" />
+
+    <div> @resp.msg </div>
+
+    <br><br>
+    <button @onclick="add_user"> <div> <face_recognition.Client.Pages.Icon name="add" /> Add user </div> </button>
+    <button @onclick="close_pop"> <div> <face_recognition.Client.Pages.Icon name="close" /> Chiudi </div> </button>
+</div>
+
+</div>
+
+<style>
+    .popup-content button{
+        float: right;
+    }
+</style>
+
+@code{
+    [Parameter]
+    public bool visible {get; set;}
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> close_pop {get; set;}
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> reload {get; set;}
+
+    private ApiResponse resp = new ApiResponse();
+
+    private string? nome;
+    private string? surname;
+
+    private async void add_user(){
+        var response = await Http.GetAsync("api/AddUser?token="+Variables.Token+"&name="+nome+"&surname="+surname);
+        string jsonContent = await response.Content.ReadAsStringAsync();
+        resp = JsonSerializer.Deserialize<ApiResponse>(jsonContent);
+        StateHasChanged();
+        await reload.InvokeAsync();
+    }
+
+    public class ApiResponse // class for api users requests
+    {
+        public int? code { get; set; }
+        public string[]? Details { get; set; }
+        public string? msg { get; set; }
+    }
+
+}
